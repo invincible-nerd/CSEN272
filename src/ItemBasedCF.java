@@ -23,43 +23,56 @@ public class ItemBasedCF {
 
         double[][] cos=new double[1001][1001]; //cosine similarity of movie i, j
 
-        int[] movieCount=new int[1001];
-        int[] movieSum=new int[1001];
-        double[] movieAvg=new double[1001];
+        double[] trainSum=new double[201];
+        int[] trainCount=new int[201];
+
+        double[] testSum=new double[101];
+        int[] testCount=new int[101];
+
+        double[] trainAvg=new double[201]; //average rating of train user u2
+        double[] testAvg=new double[101]; //average rating of test user u1
 
         for(int[] arr : train_list){
             int u=arr[0];
             int i=arr[1];
             train[u][i]=arr[2];
-            movieCount[i]++;
-            movieSum[i]+=arr[2];
+            trainCount[u]++;
+            trainSum[u]+=arr[2];
         }
 
-        for(int i=1; i<=1000; i++){
-            if(movieCount[i]>0){
-                movieAvg[i]=(double)movieSum[i]/movieCount[i];
-            }
-        }
-
-        for(int i=1; i<=1000; i++){
-            if(movieCount[i]==0){
+        for(int[] arr : test_list){
+            if(arr[2]==0){
                 continue;
             }
+            int u=arr[0]-d;
+            int i=arr[1];
+            testSum[u]+=arr[2];
+            testCount[u]++;
+        }
+
+        for(int u2=1; u2<=200; u2++){
+            trainAvg[u2]=(double)trainSum[u2]/trainCount[u2];
+        }
+        for(int u1=1; u1<=100; u1++){
+            testAvg[u1]=(double)testSum[u1]/testCount[u1];
+        }
+
+
+        for(int i=1; i<=1000; i++){
             for(int j=i+1; j<=1000; j++){
-                if(movieCount[j]==0){
-                    continue;
-                }
                 double c=0;
                 double a=0;
                 double b=0;
                 for(int u=1; u<=200; u++){
                     if(train[u][i]!=0 && train[u][j]!=0){
-                        a+=(train[u][i]-movieAvg[i])*(train[u][i]-movieAvg[i]);
-                        b+=(train[u][j]-movieAvg[j])*(train[u][j]-movieAvg[j]);
-                        c+=(train[u][i]-movieAvg[i])*(train[u][j]-movieAvg[j]);
+                        a+=(train[u][i]-trainAvg[u])*(train[u][i]-trainAvg[u]);
+                        b+=(train[u][j]-trainAvg[u])*(train[u][j]-trainAvg[u]);
+                        c+=(train[u][i]-trainAvg[u])*(train[u][j]-trainAvg[u]);
                     }
                 }
-                cos[i][j]=cos[j][i]=c/(Math.sqrt(a)*Math.sqrt(b));
+                if(a!=0){
+                    cos[i][j]=cos[j][i]=c/(Math.sqrt(a)*Math.sqrt(b));
+                }
             }
         }
 
@@ -97,8 +110,9 @@ public class ItemBasedCF {
                     double abs=w.abs;
                     sum+=r*weight;
                     totalWeights+=abs;
+                    k++;
                 }
-                double pd=sum/totalWeights;
+                double pd=testAvg[u1]+sum/totalWeights;
                 int p=5;
 
                 if(pd<1.5){
